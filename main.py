@@ -138,7 +138,7 @@ MainView = html.Div([
                     value = "for i in range(J.shape[0]) : \n    for j in range(J.shape[1]) : \n        J[i,j]=np.mod((i+j),2)"                    
                 ),
                 html.Div("Set J values to a generate image."),
-                dbc.Col([dbc.Button('Draw!', id = 'button-code-draw'),dbc.Button('Draw 10!', id = 'button-code-draw-rep')],width=3),      
+                dbc.Col([dbc.Button('Draw!', id = 'button-code-draw'),dbc.Button('Draw 20!', id = 'button-code-draw-rep')],width=3),      
                 html.Div(
                     id='written-content',
                     style={
@@ -483,7 +483,7 @@ def AddOffsetValue(img, data) :
     return img
 
 def DoRepSave(img, data) :
-    for kk in range(10) :
+    for kk in range(20) :
         img = GetImageFromCode(img,data)
         Multi = data['Multi']
         savefilename = data['savefilename']
