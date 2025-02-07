@@ -73,7 +73,7 @@ initial_values = {
     'Multi':1,
     'W':6,
     'D':8.25,
-    'Neighbor_TH':0.8,
+    'Neighbor_TH':0.0,
     'AtomPlane_size':[51,51],
     'image_size':[768,1024],
     'FLAG_STICK_NEIGHBOR':True,
@@ -138,7 +138,9 @@ MainView = html.Div([
                     value = "for i in range(J.shape[0]) : \n    for j in range(J.shape[1]) : \n        J[i,j]=np.mod((i+j),2)"                    
                 ),
                 html.Div("Set J values to a generate image."),
-                dbc.Col([dbc.Button('Draw!', id = 'button-code-draw'),dbc.Button('Draw 20!', id = 'button-code-draw-rep')],width=3),      
+                dbc.Col([dbc.Button('Draw!', id = 'button-code-draw'),
+                          dbc.Input(id="input-drawiter", type="text", value = "500"),
+                          dbc.Button('Draw rep!', id = 'button-code-draw-rep')],width=3),      
                 html.Div(
                     id='written-content',
                     style={
@@ -180,7 +182,7 @@ Params = html.Div([
                 dbc.Input(id="input-D", type="text", value = "8.25", style={'width': '50%'}), ],
                  style={'display': 'flex', 'justify-content': 'space-between', 'align-items': 'center', 'margin-bottom': '10px'}),
     html.Div( [ dbc.Label("Neighbor Threshold",style={"margin-light":"20px"}),
-                dbc.Input(id="input-Neighbor-TH", type="text", value = "0.8", style={'width': '50%'}), ],
+                dbc.Input(id="input-Neighbor-TH", type="text", value = "0.0", style={'width': '50%'}), ],
                  style={'display': 'flex', 'justify-content': 'space-between', 'align-items': 'center', 'margin-bottom': '10px'}),
     html.Div( [ dbc.Label("AtomPlane Size",style={"margin-light":"20px"}),
                 dbc.Input(id="input-atomplane-size", type="text", value = "51,51", style={'width': '50%'}), ],
@@ -397,10 +399,10 @@ def GetImageFromCode(img, data) :
         img = img.astype(np.float64)
         print("Image generated...")
         #fig.update_layout(transition_duration=500)
-        return img    
+        return img , J  
     except Exception as error:
         print("ERR", error)
-        return -1
+        return -1, -1
 
 def GetRingImage(img, data) :
     image_size = data['image_size']
@@ -482,9 +484,9 @@ def AddOffsetValue(img, data) :
     img = img + addoffset_value
     return img
 
-def DoRepSave(img, data) :
-    for kk in range(20) :
-        img = GetImageFromCode(img,data)
+def DoRepSave(img, data, n) :
+    for kk in range(n) :
+        img, J = GetImageFromCode(img,data)
         Multi = data['Multi']
         savefilename = data['savefilename']
         head, tail = os.path.split(savefilename)
@@ -496,11 +498,13 @@ def DoRepSave(img, data) :
         imgnew[imgnew > 1] = 1
         res = cv2.imwrite(savefilename, imgnew*255 )
         print('file save' , savefilename, ' return = ', res)
+        np.savetxt(savefilename+"_J.csv", J, delimiter=",")
     return img
 
 @app.callback(
     Output('figure-area', 'figure'),
     Output('store-img', 'data'),
+    Input('input-drawiter','value'),
     Input('button-new-image', 'n_clicks'),
     Input('button-code-draw', 'n_clicks'),
     Input('button-code-draw-rep', 'n_clicks'),
@@ -513,7 +517,7 @@ def DoRepSave(img, data) :
     State('store-data', 'data')    ,
     State('store-img', 'data')    
 )
-def ProcessButtonAction(n1,n2,n3,n4,n5,n6,n7,n8,n9, data, imgdata) :
+def ProcessButtonAction(ndraw,n1,n2,n3,n4,n5,n6,n7,n8,n9, data, imgdata) :
     image_size = data['image_size']
     img = np.array(imgdata['img'])
     if(len(img) != image_size[0] * image_size[1]) : 
@@ -535,11 +539,10 @@ def ProcessButtonAction(n1,n2,n3,n4,n5,n6,n7,n8,n9, data, imgdata) :
     if(trigger_id == 'button-new-image  ') :
         img = GetNewImage(img,data)
     elif(trigger_id == 'button-code-draw') :
-        img = GetImageFromCode(img,data)
+        img, _ = GetImageFromCode(img,data)
     elif(trigger_id == 'button-code-draw-rep') :
         print("+++++++++++BUTTON+++++++++++++")
-        img = DoRepSave(img, data)
-
+        img = DoRepSave(img, data, int(ndraw))
     elif(trigger_id == 'button-ring-draw') :
         img = GetRingImage(img,data)
     elif(trigger_id == 'button-tilt-draw') :
